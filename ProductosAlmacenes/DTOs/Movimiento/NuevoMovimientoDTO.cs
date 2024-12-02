@@ -11,6 +11,6 @@ namespace ProductosAlmacenes.DTOs.Movimiento
         public int UbicacionID { get; set; }
         public int Cantidad { get; set; } = 0;
         public int TipoMovimientoID { get; set; }
-        public DateTime FechaActualizacion { get; set; } = DateTime.Now;
+       // public DateTime FechaActualizacion { get; set; } = DateTime.Now;
     }
 }

@@ -36,7 +36,7 @@ namespace ProductosAlmacenes.Controllers
             var creadoMov = new CreadoMovimientoDTO
             {
                 Cantidad = nuevoMovimiento.Cantidad,
-                FechaActualizacion = nuevoMovimiento.FechaActualizacion,
+                FechaActualizacion = DateTime.Now,
                 MovimientoID = nuevoMovimiento.MovimientoID,
                 TipoMovimiento = nuevoMovimiento.TipoMovimiento.Nombre,
                 UbicacionID = nuevoMovimiento.UbicacionID,
@@ -58,7 +58,7 @@ namespace ProductosAlmacenes.Controllers
                 .Include(m => m.TipoMovimiento)
                 .Where(x => x.Ubicacion.AlmacenID == IdAlmacen && x.Ubicacion.Activo &&
                             x.FechaActualizacion >= pInicio && x.FechaActualizacion <= pFin)
-                .OrderBy(m => m.Ubicacion.AlmacenID)
+                .OrderBy(m => m.FechaActualizacion)
                 .ToListAsync();
 
             return Ok(_mapper.Map<List<CreadoMovimientoDTO>>(movimientos));
@@ -75,9 +75,40 @@ namespace ProductosAlmacenes.Controllers
                 .Include(m => m.TipoMovimiento)
                 .Where(x => x.Ubicacion.Activo &&
                             x.FechaActualizacion >= pInicio && x.FechaActualizacion <= pFin)
-                .OrderBy(m => m.Ubicacion.AlmacenID)
+                .OrderBy(m => m.FechaActualizacion)
                 .ToListAsync();
             return Ok(_mapper.Map<List<CreadoMovimientoDTO>>(movimientos));
         }
+        [HttpGet("obtenerexistenciasdeproducto")]
+        public async Task<ActionResult<List<ExistenciasPorAlmacenDTO>>> ObtenerExistenciasPorProducto(int productoId)
+        {
+            // Obtener los movimientos para el producto especificado
+            var movimientos = await _dbContext.Movimientos
+                .Include(m => m.Ubicacion)
+                .ThenInclude(u => u.Almacen) // Incluimos la información del almacén
+                .Where(m => m.ProductoID == productoId && m.Ubicacion.Activo) // Filtramos por el ProductoID y ubicaciones activas
+                .ToListAsync();
+
+            // Agrupar los movimientos por AlmacenID y calcular las existencias
+            var existenciasPorAlmacen = movimientos
+                .GroupBy(m => m.Ubicacion.AlmacenID)
+                .Select(group => new ExistenciasPorAlmacenDTO
+                {
+                    AlmacenID = group.Key,
+                    AlmacenNombre = group.FirstOrDefault()?.Ubicacion.Almacen.Nombre,
+                    ExistenciaTotal = group.Sum(m => m.TipoMovimientoID== 1? m.Cantidad : -m.Cantidad) // Si es entrada, sumamos; si es salida, restamos
+                })
+                .ToList();
+
+            return Ok(existenciasPorAlmacen);
+        }
+
     }
+    public class ExistenciasPorAlmacenDTO
+    {
+        public int AlmacenID { get; set; }
+        public string AlmacenNombre { get; set; }
+        public int ExistenciaTotal { get; set; }
+    }
+
 }

@@ -13,7 +13,7 @@ namespace ProductosAlmacenes.DTOs.Movimiento
         public string NombreProducto { get; set; }
         public string NombreAlmacen { get; set; }
         public int UbicacionID { get; set; }
-        public DateTime FechaActualizacion { get; set; } = DateTime.Now;
+        public DateTime FechaActualizacion { get; set; }
 
     }
 }
